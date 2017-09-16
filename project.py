@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from database_setup import Base, Restaurant, MenuItem
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="", static_folder="tmp")
 
 engine = create_engine("sqlite:///restaurantmenu.db")
 Base.metadata.bind = engine
@@ -14,6 +14,10 @@ session = DBSession()
 
 
 @app.route("/")
+def indexPage():
+    return render_template("index.html")
+
+
 @app.route("/restaurants/<int:restaurant_id>/")
 def restaurantMenu(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
@@ -32,17 +36,21 @@ def newMenuItem(restaurant_id):
         return render_template("newmenuitem.html", restaurant_id=restaurant_id)
 
 
-@app.route("/restaurant/<int:restaurant_id>/<int:menu_id>/edit/")
+@app.route('/restaurants/<int:restaurant_id>/<int:menu_id>/edit',
+           methods=['GET', 'POST'])
 def editMenuItem(restaurant_id, menu_id):
     editedItem = session.query(MenuItem).filter_by(id=menu_id).one()
-    if request.method == "POST":
-        if request.form["name"]:
-            editedItem.name = request.form["name"]
+    if request.method == 'POST':
+        if request.form['name']:
+            editedItem.name = request.form['name']
         session.add(editedItem)
         session.commit()
-        return redirect(url_for("restaurantMenu", restaurant_id=restaurant_id))
+        return redirect(url_for('restaurantMenu', restaurant_id=restaurant_id))
     else:
-        return render_template("editMenuItem.html", restaurant_id=restaurant_id, menu_id=menu_id, meuItem=editedItem)
+        # USE THE RENDER_TEMPLATE FUNCTION BELOW TO SEE THE VARIABLES YOU
+        # SHOULD USE IN YOUR EDITMENUITEM TEMPLATE
+        return render_template(
+            'editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, meuItem=editedItem)
 
 
 @app.route("/restaurant/<int:restaurant_id>/<int:menu_id>/delete/")
